@@ -40,7 +40,6 @@ type
     procedure FormCreate(Sender: TObject);
   private
     { Private declarations }
-    iMaxRandomStrSize: integer;
 
     sCaptionProcess,
     sCaptionReset,
@@ -58,29 +57,15 @@ type
     sAlertErrorOpeningFile,
     sAlertNoTextToProcess: String;
 
-    //UI related routines
     procedure PrepareCaptions;
     procedure UpdateUI(const bReset: Boolean = False);
     procedure Reset;
     procedure ImportTextFile;
     procedure GetINIParams;
-    procedure Process; overload;
-
-    //Business rules routines
-    function Process(const sText: String): String; overload;
-    function GetCurrentSequenceLength(var arSeq: TArray<String>): Integer;
-    procedure CleanUpCurrentSequence(var arSeq: TArray<String>);
-    procedure AddToCurrentSequence(var arSeq: TArray<String>; const cValue: Char);
-    procedure NewSequence(var arSeq: TArray<String>);
-    function GetIntegerValueOfChar(const cValue: Char): Integer;
-    procedure GenerateTextRandomly;
-    function SummarizeResults(var arSeq: TArray<String>; const sText: String): String;
+    procedure Process;
   public
     { Public declarations }
   end;
-
-const
-  sBaseRandomStr = '1234567890abcdefghijklmnopqrstuvwxyz';
 
 var
   Main: TMain;
@@ -88,7 +73,7 @@ var
 implementation
 
 uses
-  System.IniFiles, System.UITypes, System.Character, StrUtils, System.Generics.Collections;
+  System.IniFiles, System.UITypes, uDM;
 
 {$R *.dfm}
 
@@ -107,7 +92,7 @@ end;
 
 procedure TMain.btnGenerateClick(Sender: TObject);
 begin
-  GenerateTextRandomly;
+  mmInput.Lines.Add(DM.GenerateTextRandomly);
 end;
 
 procedure TMain.btnImportClick(Sender: TObject);
@@ -133,7 +118,7 @@ var
 begin
   oIniFile := TIniFile.Create(ChangeFileExt(Application.ExeName,'.INI' ));
   try
-    iMaxRandomStrSize := oIniFile.ReadInteger('OPTIONS', 'MaxRandomStrSize', 50);
+    DM.iMaxRandomStrSize := oIniFile.ReadInteger('OPTIONS', 'MaxRandomStrSize', 50);
     sLanguage := oIniFile.ReadString('OPTIONS', 'Language', 'EN');
 
     sCaptionProcess := UTF8ToString(RawByteString(oIniFile.ReadString(sLanguage, 'Caption1', 'Text not found')));
@@ -213,149 +198,14 @@ begin
     MessageDlg(sAlertNoTextToProcess, TMsgDlgType.mtWarning, [mbOK], 0)
   else
   begin
-    mmResult.Lines.Add(Process(mmInput.Lines.Text));
+    mmResult.Lines.Add(DM.Process(mmInput.Lines.Text));
     UpdateUI;
   end;
-end;
-
-function TMain.Process(const sText: String): String;
-var
-  iCount: Integer;
-  arSequences: TArray<String>;
-  cCurrentChar, cLastIntegerChar: Char;
-begin
-  cLastIntegerChar := Char(0);
-  cCurrentChar := Char(0);
-
-  NewSequence(arSequences);
-
-  try
-    for iCount := 1 to sText.Length do
-    begin
-      cCurrentChar := sText[iCount];
-
-      if cCurrentChar.IsNumber then//if it is a number, we check whether is part of a sequence
-      begin
-        if cLastIntegerChar <> Char(0) then//if is there a previous number, we continue the verification of the sequence
-        begin
-          if (GetIntegerValueOfChar(cLastIntegerChar) + 1) = GetIntegerValueOfChar(cCurrentChar) then
-          //The previous number and the current one are a sequence of two numbers, so we put them in a string inside the sequences array
-          begin
-            AddToCurrentSequence(arSequences, cCurrentChar);
-          end
-          else if (GetCurrentSequenceLength(arSequences) = 1) then
-          //The previous and the current number are not a sequence, and the current sequence in the array has only one number
-          // so we reset the current sequence in the array to empty
-          begin
-            CleanUpCurrentSequence(arSequences);
-            AddToCurrentSequence(arSequences, cCurrentChar);
-          end
-          else//the previous and the current number are not a sequence, but there is a sequence with more than one number
-          //so we start a new sequence in the array
-          begin
-            NewSequence(arSequences);
-            AddToCurrentSequence(arSequences, cCurrentChar);
-          end;
-        end
-        else//there is no previous number, so this is the begining of a potential sequence
-        begin
-          AddToCurrentSequence(arSequences, cCurrentChar);
-        end;
-
-        cLastIntegerChar := cCurrentChar;
-      end
-      else
-      begin
-        if (GetCurrentSequenceLength(arSequences) = 1) then
-        //If the current sequence is only one char long, then we reset the it
-        begin
-          CleanUpCurrentSequence(arSequences);
-        end
-        else if (GetCurrentSequenceLength(arSequences) <> 0) then //otherwise, if the current sequence is longer than one char, we start a new one
-        begin
-          NewSequence(arSequences);
-        end;
-
-        cLastIntegerChar := Char(0);
-      end;
-    end;
-
-    if arSequences[Length(arSequences) - 1].Length = 1 then
-      SetLength(arSequences, Length(arSequences) - 1);
-
-    Result := SummarizeResults(arSequences, sText);
-  finally
-    arSequences := nil;
-  end;
-end;
-
-function TMain.GetCurrentSequenceLength(var arSeq: TArray<String>): Integer;
-begin
-  Result := arSeq[Length(arSeq) - 1].Length;
-end;
-
-procedure TMain.CleanUpCurrentSequence(var arSeq: TArray<String>);
-begin
-  arSeq[Length(arSeq) - 1] := EmptyStr;
-end;
-
-procedure TMain.AddToCurrentSequence(var arSeq: TArray<String>; const cValue: Char);
-begin
-  arSeq[Length(arSeq) - 1] := arSeq[Length(arSeq) - 1] + cValue;
-end;
-
-procedure TMain.NewSequence(var arSeq: TArray<String>);
-begin
-  SetLength(arSeq, Length(arSeq)+ 1);
-  arSeq[Length(arSeq) - 1] := EmptyStr;
-end;
-
-function TMain.GetIntegerValueOfChar(const cValue: Char): Integer;
-begin
-  Result := Integer(cValue) - Integer('0');
-end;
-
-procedure TMain.GenerateTextRandomly;
-var
-  iCount:integer;
-  sResult: String;
-begin
-  mmInput.Lines.Clear;
-  for iCount := 1 to iMaxRandomStrSize do
-    sResult := sResult + sBaseRandomStr[Random(Length(sBaseRandomStr))+1];
-
-  mmInput.Lines.Add(sResult);
 end;
 
 procedure TMain.Reset;
 begin
   UpdateUI(True);
-end;
-
-function TMain.SummarizeResults(var arSeq: TArray<String>; const sText: String): String;
-var
-  dSummary: TDictionary<String,Integer>;
-  pItemSeq: TPair<String,Integer>;
-  iCount: Integer;
-begin
-  Result := sText + sLineBreak + sLineBreak;
-
-  dSummary := TDictionary<String,Integer>.Create;
-  for iCount := 0 to (Length(arSeq) - 1) do
-  begin
-    if arSeq[iCount] <> EmptyStr then
-    begin
-      if dSummary.ContainsKey(arSeq[iCount]) then
-        dSummary.Items[arSeq[iCount]] := (dSummary.Items[arSeq[iCount]] + 1)
-      else
-        dSummary.Add(arSeq[iCount], 1);
-    end;
-  end;
-
-  Result := Result + sLineBreak + sLineBreak;
-
-  for pItemSeq in dSummary do
-    Result := Result + pItemSeq.Key + ' ' + pItemSeq.Value.ToString  + sLineBreak;
 end;
 
 end.
