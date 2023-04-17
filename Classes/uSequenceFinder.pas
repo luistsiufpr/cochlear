@@ -114,7 +114,6 @@ procedure TSequenceFinder.Process;
 var
   iCount: Integer;
   cCurrentChar, cLastIntegerChar: Char;
-
   rSequence, rAux: TSequence;
   lsSequences: TList<TSequence>;
   iCmp: IComparer<TSequence>;
