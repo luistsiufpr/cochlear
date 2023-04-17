@@ -1,0 +1,48 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{43B5D49B-2DE1-4EFD-BE9B-623D348E238A}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="ProgrammingAssignment.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="Test\ProgrammingAssignmentTests.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="ProgrammingAssignment">
+        <MSBuild Projects="ProgrammingAssignment.dproj"/>
+    </Target>
+    <Target Name="ProgrammingAssignment:Clean">
+        <MSBuild Projects="ProgrammingAssignment.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="ProgrammingAssignment:Make">
+        <MSBuild Projects="ProgrammingAssignment.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="ProgrammingAssignmentTests">
+        <MSBuild Projects="Test\ProgrammingAssignmentTests.dproj"/>
+    </Target>
+    <Target Name="ProgrammingAssignmentTests:Clean">
+        <MSBuild Projects="Test\ProgrammingAssignmentTests.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="ProgrammingAssignmentTests:Make">
+        <MSBuild Projects="Test\ProgrammingAssignmentTests.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="ProgrammingAssignment;ProgrammingAssignmentTests"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="ProgrammingAssignment:Clean;ProgrammingAssignmentTests:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="ProgrammingAssignment:Make;ProgrammingAssignmentTests:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>

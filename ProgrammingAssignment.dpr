@@ -3,7 +3,9 @@ program ProgrammingAssignment ;
 uses
   Vcl.Forms,
   UIMain in 'Forms\UIMain.pas' {Main},
-  uDM in 'DMs\uDM.pas' {DM: TDataModule};
+  uDM in 'DMs\uDM.pas' {DM: TDataModule},
+  uSequenceFinder in 'Classes\uSequenceFinder.pas',
+  uMySingleton in 'Classes\uMySingleton.pas';
 
 {$R *.res}
 

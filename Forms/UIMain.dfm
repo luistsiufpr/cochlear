@@ -2,9 +2,10 @@ object Main: TMain
   Left = 0
   Top = 0
   BorderIcons = [biSystemMenu, biMinimize]
+  BorderStyle = bsSingle
   Caption = 'Cochlear - Programming Assignment '
-  ClientHeight = 436
-  ClientWidth = 563
+  ClientHeight = 446
+  ClientWidth = 573
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -19,8 +20,8 @@ object Main: TMain
   TextHeight = 13
   object Bevel1: TBevel
     Left = 0
-    Top = 393
-    Width = 563
+    Top = 403
+    Width = 573
     Height = 2
     Align = alBottom
     ExplicitLeft = 264
@@ -30,15 +31,16 @@ object Main: TMain
   object pnlTop: TPanel
     Left = 0
     Top = 0
-    Width = 563
+    Width = 573
     Height = 89
     Align = alTop
     BevelOuter = bvNone
     Color = clWhite
     ParentBackground = False
     TabOrder = 0
+    ExplicitWidth = 563
     object imgLogo: TImage
-      Left = 472
+      Left = 482
       Top = 0
       Width = 91
       Height = 89
@@ -536,12 +538,14 @@ object Main: TMain
   end
   object pnlBottom: TPanel
     Left = 0
-    Top = 395
-    Width = 563
+    Top = 405
+    Width = 573
     Height = 41
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 1
+    ExplicitTop = 395
+    ExplicitWidth = 563
     object btnClose: TButton
       Left = 476
       Top = 8
@@ -563,36 +567,39 @@ object Main: TMain
   object pcMain: TPageControl
     Left = 0
     Top = 89
-    Width = 563
-    Height = 304
-    ActivePage = tsResult
+    Width = 573
+    Height = 314
+    ActivePage = tsInput
     Align = alClient
     TabOrder = 2
+    ExplicitWidth = 563
+    ExplicitHeight = 304
     object tsInput: TTabSheet
       TabVisible = False
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
+      ExplicitWidth = 555
+      ExplicitHeight = 294
       object pnlInput: TPanel
         Left = 0
         Top = 0
-        Width = 555
-        Height = 294
+        Width = 565
+        Height = 304
         Align = alClient
         BevelOuter = bvNone
         ParentBackground = False
         TabOrder = 0
+        ExplicitWidth = 555
+        ExplicitHeight = 294
         object pnlButtons: TPanel
           Left = 0
           Top = 17
-          Width = 555
+          Width = 565
           Height = 53
           Align = alTop
           BevelOuter = bvNone
           TabOrder = 0
+          ExplicitWidth = 555
           object btnGenerate: TButton
-            Left = 281
+            Left = 280
             Top = 6
             Width = 260
             Height = 41
@@ -601,7 +608,7 @@ object Main: TMain
             OnClick = btnGenerateClick
           end
           object btnImport: TButton
-            Left = 13
+            Left = 12
             Top = 6
             Width = 260
             Height = 41
@@ -613,17 +620,19 @@ object Main: TMain
         object mmInput: TMemo
           Left = 0
           Top = 70
-          Width = 555
-          Height = 224
+          Width = 565
+          Height = 234
           Align = alClient
           ReadOnly = True
           ScrollBars = ssBoth
           TabOrder = 1
+          ExplicitWidth = 555
+          ExplicitHeight = 224
         end
         object pnlTopInput: TPanel
           Left = 0
           Top = 0
-          Width = 555
+          Width = 565
           Height = 17
           Align = alTop
           BevelOuter = bvNone
@@ -637,35 +646,42 @@ object Main: TMain
           ParentBackground = False
           ParentFont = False
           TabOrder = 2
+          ExplicitWidth = 555
         end
       end
     end
     object tsResult: TTabSheet
       ImageIndex = 1
       TabVisible = False
+      ExplicitWidth = 555
+      ExplicitHeight = 294
       object pnlResult: TPanel
         Left = 0
         Top = 0
-        Width = 555
-        Height = 294
+        Width = 565
+        Height = 304
         Align = alClient
         BevelOuter = bvNone
         ParentBackground = False
         TabOrder = 0
+        ExplicitWidth = 555
+        ExplicitHeight = 294
         object mmResult: TMemo
           Left = 0
           Top = 17
-          Width = 555
-          Height = 277
+          Width = 565
+          Height = 287
           Align = alClient
           ReadOnly = True
           ScrollBars = ssBoth
           TabOrder = 0
+          ExplicitWidth = 555
+          ExplicitHeight = 277
         end
         object pnlTopResult: TPanel
           Left = 0
           Top = 0
-          Width = 555
+          Width = 565
           Height = 17
           Align = alTop
           BevelOuter = bvNone
@@ -679,6 +695,7 @@ object Main: TMain
           ParentBackground = False
           ParentFont = False
           TabOrder = 1
+          ExplicitWidth = 555
         end
       end
     end

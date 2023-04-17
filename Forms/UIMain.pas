@@ -40,6 +40,7 @@ type
     procedure FormCreate(Sender: TObject);
   private
     { Private declarations }
+    iMaxRandomStrSize: Integer;
 
     sCaptionProcess,
     sCaptionReset,
@@ -92,7 +93,7 @@ end;
 
 procedure TMain.btnGenerateClick(Sender: TObject);
 begin
-  mmInput.Lines.Add(DM.GenerateTextRandomly);
+  mmInput.Lines.Add(DM.GenerateTextRandomly(iMaxRandomStrSize));
 end;
 
 procedure TMain.btnImportClick(Sender: TObject);
@@ -118,7 +119,7 @@ var
 begin
   oIniFile := TIniFile.Create(ChangeFileExt(Application.ExeName,'.INI' ));
   try
-    DM.iMaxRandomStrSize := oIniFile.ReadInteger('OPTIONS', 'MaxRandomStrSize', 50);
+    iMaxRandomStrSize := oIniFile.ReadInteger('OPTIONS', 'MaxRandomStrSize', 50);
     sLanguage := oIniFile.ReadString('OPTIONS', 'Language', 'EN');
 
     sCaptionProcess := UTF8ToString(RawByteString(oIniFile.ReadString(sLanguage, 'Caption1', 'Text not found')));
