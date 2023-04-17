@@ -3,9 +3,15 @@ unit uSequenceFinder;
 interface
 
 uses
-  Classes, System.Generics.Collections, uMySingleton;
+  Classes, System.Generics.Collections, Generics.Defaults, uMySingleton;
 
 type
+  TSequence = Record
+    Text: String;
+    Count: Integer;
+  end;
+
+
   TSequenceFinder = class(TPersistent)
   private
     FsTextToProcess: string;
@@ -15,12 +21,11 @@ type
     function GetBaseRandomStr: String;
     function GetResult: String;
 
-    function GetCurrentSequenceLength(var arSeq: TArray<String>): Integer;
-    procedure CleanUpCurrentSequence(var arSeq: TArray<String>);
-    procedure AddToCurrentSequence(var arSeq: TArray<String>; const cValue: Char);
-    procedure NewSequence(var arSeq: TArray<String>);
+    procedure AddSequenceToList(var rSeq: TSequence; var lsSeqs: TList<TSequence>);
+    procedure CleanUpCurrentSequence(var rSeq: TSequence);
+    procedure AddToCurrentSequence(var rSeq: TSequence; const cValue: Char);
+    procedure NewSequence(var rSeq: TSequence);
     function GetIntegerValueOfChar(const cValue: Char): Integer;
-    function SummarizeResults(var arSeq: TArray<String>; const sText: String): String;
   public
     procedure Process;
     function GenerateTextRandomly(const PiMaxSize: Integer): String;
@@ -28,7 +33,12 @@ type
     property TextToProcess: string write SetTextToProcess;
     property BaseRandomStr: String read GetBaseRandomStr;
     property Result: String read GetResult;
-end;
+  end;
+
+  TSequenceComparer = class(TComparer<TSequence>)
+  public
+    function Compare(const Left, Right: TSequence): Integer; override;
+  end;
 
   TSequenceFinderSingleton = class(TMySingleton<TSequenceFinder>);
 
@@ -40,15 +50,34 @@ uses
 
 { TSequenceFinder }
 
-procedure TSequenceFinder.AddToCurrentSequence(var arSeq: TArray<String>;
-  const cValue: Char);
+procedure TSequenceFinder.AddSequenceToList(var rSeq: TSequence; var lsSeqs: TList<TSequence>);
+var
+  bExists: Boolean;
+  i: Integer;
 begin
-  arSeq[Length(arSeq) - 1] := arSeq[Length(arSeq) - 1] + cValue;
+  bExists := False;
+
+  for i := 0 to lsSeqs.Count - 1 do
+    if lsSeqs.Items[i].Text = rSeq.Text then
+    begin
+      rSeq.Count := lsSeqs.Items[i].Count + 1;
+      lsSeqs.Items[i] := rSeq;
+      bExists := True;
+      Break;
+    end;
+
+  if not bExists then
+    lsSeqs.Add(rSeq);
 end;
 
-procedure TSequenceFinder.CleanUpCurrentSequence(var arSeq: TArray<String>);
+procedure TSequenceFinder.AddToCurrentSequence(var rSeq: TSequence; const cValue: Char);
 begin
-  arSeq[Length(arSeq) - 1] := EmptyStr;
+  rSeq.Text := rSeq.Text + cValue;
+end;
+
+procedure TSequenceFinder.CleanUpCurrentSequence(var rSeq: TSequence);
+begin
+  NewSequence(rSeq);
 end;
 
 function TSequenceFinder.GenerateTextRandomly(const PiMaxSize: Integer): String;
@@ -65,12 +94,6 @@ begin
   Result := '1234567890abcdefghijklmnopqrstuvwxyz';
 end;
 
-function TSequenceFinder.GetCurrentSequenceLength(
-  var arSeq: TArray<String>): Integer;
-begin
-  Result := arSeq[Length(arSeq) - 1].Length;
-end;
-
 function TSequenceFinder.GetIntegerValueOfChar(const cValue: Char): Integer;
 begin
   Result := Integer(cValue) - Integer('0');
@@ -81,23 +104,28 @@ begin
   Result := FsResult;
 end;
 
-procedure TSequenceFinder.NewSequence(var arSeq: TArray<String>);
+procedure TSequenceFinder.NewSequence(var rSeq: TSequence);
 begin
-  SetLength(arSeq, Length(arSeq)+ 1);
-  arSeq[Length(arSeq) - 1] := EmptyStr;
+  rSeq.Text := EmptyStr;
+  rSeq.Count := 1;
 end;
 
 procedure TSequenceFinder.Process;
 var
   iCount: Integer;
-  arSequences: TArray<String>;
   cCurrentChar, cLastIntegerChar: Char;
+
+  rSequence, rAux: TSequence;
+  lsSequences: TList<TSequence>;
+  iCmp: IComparer<TSequence>;
 begin
   cLastIntegerChar := Char(0);
   cCurrentChar := Char(0);
 
-  NewSequence(arSequences);
+  NewSequence(rSequence);
 
+  iCmp := TSequenceComparer.Create;
+  lsSequences := TList<TSequence>.Create(iCmp);
   try
     for iCount := 1 to Length(FsTextToProcess) do
     begin
@@ -110,51 +138,58 @@ begin
           if (GetIntegerValueOfChar(cLastIntegerChar) + 1) = GetIntegerValueOfChar(cCurrentChar) then
           //The previous number and the current one are a sequence of two numbers, so we put them in a string inside the sequences array
           begin
-            AddToCurrentSequence(arSequences, cCurrentChar);
+            AddToCurrentSequence(rSequence, cCurrentChar);
+
+            if (Length(rSequence.Text) > 1) and (iCount = Length(FsTextToProcess))  then
+              AddSequenceToList(rSequence, lsSequences);
           end
-          else if (GetCurrentSequenceLength(arSequences) = 1) then
+          else if (Length(rSequence.Text) = 1) then
           //The previous and the current number are not a sequence, and the current sequence in the array has only one number
           // so we reset the current sequence in the array to empty
           begin
-            CleanUpCurrentSequence(arSequences);
-            AddToCurrentSequence(arSequences, cCurrentChar);
+            CleanUpCurrentSequence(rSequence);
+            AddToCurrentSequence(rSequence, cCurrentChar);
           end
           else//the previous and the current number are not a sequence, but there is a sequence with more than one number
           //so we start a new sequence in the array
           begin
-            NewSequence(arSequences);
-            AddToCurrentSequence(arSequences, cCurrentChar);
+            AddSequenceToList(rSequence, lsSequences);
+            NewSequence(rSequence);
+            AddToCurrentSequence(rSequence, cCurrentChar);
           end;
         end
         else//there is no previous number, so this is the begining of a potential sequence
         begin
-          AddToCurrentSequence(arSequences, cCurrentChar);
+          AddToCurrentSequence(rSequence, cCurrentChar);
         end;
 
         cLastIntegerChar := cCurrentChar;
       end
       else
       begin
-        if (GetCurrentSequenceLength(arSequences) = 1) then
+        if (Length(rSequence.Text) = 1) then
         //If the current sequence is only one char long, then we reset the it
         begin
-          CleanUpCurrentSequence(arSequences);
+          CleanUpCurrentSequence(rSequence);
         end
-        else if (GetCurrentSequenceLength(arSequences) <> 0) then //otherwise, if the current sequence is longer than one char, we start a new one
+        else if (Length(rSequence.Text) <> 0) then //otherwise, if the current sequence is longer than one char, we start a new one
         begin
-          NewSequence(arSequences);
+          AddSequenceToList(rSequence, lsSequences);
+          NewSequence(rSequence);
         end;
 
         cLastIntegerChar := Char(0);
       end;
     end;
 
-    if arSequences[Length(arSequences) - 1].Length = 1 then
-      SetLength(arSequences, Length(arSequences) - 1);
+    lsSequences.Sort;
+    lsSequences.Reverse;
 
-    FsResult := SummarizeResults(arSequences, FsTextToProcess);
+    FsResult  := FsTextToProcess + sLineBreak + sLineBreak;
+    for rAux in lsSequences do
+      FsResult  := FsResult  + sLineBreak + rAux.Text + ' ' + IntToStr(rAux.Count);
   finally
-    arSequences := nil;
+    lsSequences.Free;
   end;
 end;
 
@@ -163,93 +198,13 @@ begin
   FsTextToProcess := Value;
 end;
 
-function TSequenceFinder.SummarizeResults(var arSeq: TArray<String>;
-  const sText: String): String;
-var
-  dSummary: TDictionary<String,Integer>;
-  pItemSeq: TPair<String,Integer>;
-  i,j: Integer;
-  arToRemove: TArray<String>;
-  sRemove: String;
-  arResult: TArray<TArray<String>>;
-  iHighest: Integer;
+{ TSequenceComparer }
 
-  procedure InsertSorted(var arAux: TArray<String>; const sValue: String);
-  var
-    k,l: Integer;
-  begin
-    SetLength(arAux, Length(arAux) + 1);
-    k := 0;
-
-    while (arAux[k] <> EmptyStr) and (StrToInt(sValue) > StrToInt(arAux[k])) do
-      Inc(k);
-
-    if k < (Length(arAux) - 1) then
-      for l := (Length(arAux) -1) downto (k + 1) do
-        arAux[l] := arAux[l-1];
-
-    arAux[k] := sValue;
-  end;
+function TSequenceComparer.Compare(const Left, Right: TSequence): Integer;
 begin
-  //This method is too long and likely not the best solution, but I didnt realized the
-  //final list needed to be sorted until my last read of the assignment...
-  //The is what I could do with the time I had.
-  Result := sText + sLineBreak + sLineBreak;
-  iHighest := 0;
-
-  dSummary := TDictionary<String,Integer>.Create;
-  for i := 0 to (Length(arSeq) - 1) do
-  begin
-    if arSeq[i] <> EmptyStr then
-    begin
-      if dSummary.ContainsKey(arSeq[i]) then
-        dSummary.Items[arSeq[i]] := (dSummary.Items[arSeq[i]] + 1)
-      else
-        dSummary.Add(arSeq[i], 1);
-
-      if iHighest < dSummary.Items[arSeq[i]] then
-        iHighest := dSummary.Items[arSeq[i]];
-    end;
-  end;
-
-  i := 1;
-  SetLength(arResult, iHighest);
-  SetLength(arToRemove, 0);
-  try
-    while dSummary.Count > 0 do
-    begin
-      for pItemSeq in dSummary do
-      begin
-        if i = pItemSeq.Value then
-        begin
-          InsertSorted(arResult[i-1], pItemSeq.Key);
-
-          SetLength(arToRemove, Length(arToRemove) + 1);
-          arToRemove[Length(arToRemove) - 1] := pItemSeq.Key;
-        end;
-      end;
-
-      for sRemove in arToRemove do
-        dSummary.Remove(sRemove);
-      SetLength(arToRemove, 0);
-
-      Inc(i);
-    end;
-
-
-    for i := (Length(arResult) - 1) downto 0 do
-    begin
-      if arResult[i] <> nil then
-      begin
-        for j := Length(arResult[i]) - 1 downto 0 do
-          Result := Result + sLineBreak + arResult[i][j] + ' ' + IntToStr(i + 1);
-      end;
-    end;
-
-  finally
-    arToRemove := nil;
-    arResult := nil;
-  end;
+  Result := Left.Count - Right.Count;
+  if Result = 0 then
+    Result := StrToInt(Left.Text) - StrToInt(Right.Text);
 end;
 
 end.
